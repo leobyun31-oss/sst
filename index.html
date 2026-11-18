@@ -292,7 +292,31 @@ a.bn:focus-visible,a.sh:focus-visible,a.ev:focus-visible{outline:3px solid var(-
   .spon .spon-h{display:none}
 }
 @media (min-width:1280px) and (min-height:1140px){.spon .spon-v{position:sticky;top:72px}}
+.rcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.rc{background:var(--bg);border-radius:8px;padding:10px 12px;min-width:0}
+.rc span{display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.02em}
+.rc b{display:block;font-size:16px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc small{display:block;font-size:12px;color:var(--muted);margin-top:2px}
+.h2h summary{cursor:pointer;font-size:13px;font-weight:700;color:var(--court);padding:4px 0}
+.h2h-l{display:grid;gap:0;margin-top:6px}
+.h2h-l div{display:grid;grid-template-columns:1fr auto 48px;gap:10px;padding:7px 0;border-bottom:1px solid var(--line);font-size:14px}
+.h2h-l .mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.h2h-l div span:last-child{text-align:right;font-family:var(--f-mono);font-size:13px}
+.bdg{display:inline-block;font:700 10px var(--f-body);background:var(--ball);color:var(--ball-ink);border-radius:999px;padding:2px 7px;margin-left:5px;vertical-align:middle;white-space:nowrap}
+.mvp{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.mv{background:var(--bg);border-radius:10px;padding:12px;min-width:0}
+.mv .bdg{margin-left:0}
+.mv b{display:block;font-size:15px;margin-top:8px;line-height:1.35}
+.mv b .pbtn{font-weight:700}
+.mv small{display:block;font-size:12px;color:var(--muted);margin-top:3px}
+.share-btn{font-size:11px;margin-left:8px;color:var(--court);letter-spacing:0}
+.hero-r{display:inline-flex;gap:8px;align-items:center}
+.instbtn{appearance:none;border:1px solid rgba(255,255,255,.45);background:rgba(255,255,255,.12);color:#fff;font:700 12px var(--f-body);padding:5px 11px;border-radius:999px;cursor:pointer}
+.inst div{background:var(--bg);border-radius:10px;padding:12px 14px;margin-bottom:10px;font-size:14px}
+.inst div.on{outline:2px solid var(--court)}
+.inst ol{margin:6px 0 0;padding-left:20px;line-height:1.8}
 @media (max-width:560px){
+  .mvp{grid-template-columns:repeat(2,minmax(0,1fr))}
   .pstats{grid-template-columns:repeat(2,minmax(0,1fr))}
   .pg{grid-template-columns:28px 1fr auto 1fr;gap:8px}
   .tab{padding:14px 6px 12px;font-size:13px}
@@ -309,7 +333,7 @@ a.bn:focus-visible,a.sh:focus-visible,a.ev:focus-visible{outline:3px solid var(-
 <body>
 <header class="hero"><div class="hero-in">
   <div class="club">SST TENNIS<small>복식 랭킹 · 승률 기준</small></div>
-  <span class="live off" id="live"><i></i><span id="liveTxt">연결 중</span></span>
+  <span class="hero-r"><button class="instbtn" id="instBtn" type="button" hidden>앱 설치</button><span class="live off" id="live"><i></i><span id="liveTxt">연결 중</span></span></span>
 </div></header>
 
 <nav class="tabs"><div class="tabs-in" role="tablist">
@@ -328,6 +352,7 @@ a.bn:focus-visible,a.sh:focus-visible,a.ev:focus-visible{outline:3px solid var(-
       <div class="stat"><b id="sPlayers">0</b><span>참가 인원</span></div>
       <div class="stat"><b id="sLast">-</b><span>최근 경기</span></div>
     </div>
+    <div class="card" id="mvpBox" hidden></div>
     <div class="card">
       <div class="row spread">
         <div style="min-width:0"><div class="row" style="gap:8px"><h2 id="rankTitle">개인별 순위</h2><span class="tag" id="rankCount"></span></div><p class="sub" id="rankSub"></p></div>
@@ -535,7 +560,7 @@ function rowHtml(p,unr){
   const d=p.diff>0?`<span class="pos">+${p.diff}</span>`:p.diff<0?`<span class="neg">${p.diff}</span>`:"0";
   const form=p.form.map(f=>`<i class="${f}">${f==="W"?"승":f==="L"?"패":"무"}</i>`).join("");
   const rc=unr?`<span class="rank">–</span>`:`<span class="rank ${p.rk<=3?"r"+p.rk:""}">${p.rk}</span>`;
-  return `<tr class="${unr?"unranked":""}"><td class="rk">${rc}</td><td class="name"><button class="pbtn" data-pid="${esc(p.id)}">${esc(nameOf(p.id))}</button></td><td>${p.g}</td><td>${p.w}</td><td>${p.d}</td><td>${p.l}</td><td><div class="rate"><div class="b"><i style="width:${pct}%"></i></div>${pct}%</div></td><td>${d}</td><td style="text-align:left;padding-left:10px"><span class="form">${form}</span></td></tr>`;
+  return `<tr class="${unr?"unranked":""}"><td class="rk">${rc}</td><td class="name"><button class="pbtn" data-pid="${esc(p.id)}">${esc(nameOf(p.id))}</button>${badgeHtml(p.id)}</td><td>${p.g}</td><td>${p.w}</td><td>${p.d}</td><td>${p.l}</td><td><div class="rate"><div class="b"><i style="width:${pct}%"></i></div>${pct}%</div></td><td>${d}</td><td style="text-align:left;padding-left:10px"><span class="form">${form}</span></td></tr>`;
 }
 /* 순위 보기: 개인별 / 팀별(같이 뛴 2인 조합) + 이름 검색 */
 const TEAM_MIN=3;
@@ -566,7 +591,7 @@ function teamRow(t,unr){
 }
 const RANK_HEAD=`<thead><tr><th>순위</th><th>이름</th><th>경기</th><th>승</th><th>무</th><th>패</th><th>승률</th><th>득실</th><th style="text-align:left;padding-left:10px">최근 5경기</th></tr></thead>`;
 function renderRank(){
-  renderYears();
+  renderYears();renderMVP();
   const ms=S.matches.filter(m=>inPeriod(m.date));const R=ranked(ms);const team=S.rankMode==="t";
   $("#sMatches").textContent=ms.length;$("#sPlayers").textContent=R.all.length;
   const last=ms.reduce((a,m)=>m.date>a?m.date:a,"");$("#sLast").textContent=last?last.slice(5).replace("-","/"):"-";
@@ -654,6 +679,7 @@ function openPlayer(pid,from){
   const mine=[...ms].filter(m=>m.teamA.includes(pid)||m.teamB.includes(pid)).sort(byTime).reverse();
   let h=`<div class="sheet-h"><div><h2 id="pName">${pname}</h2><div class="row" style="gap:8px;margin-top:8px">${now?tchip(me.tier):`<span class="tchip N">순위 미산정</span>`}<span class="sub" style="margin:0">${periodTxt} 기준</span></div></div><button class="xbtn" id="sheetClose" aria-label="닫기">✕</button></div>`;
   h+=`<div class="pstats"><div><b>${now?now+"위":"–"}</b><span>현재 순위${now?` / ${R.q.length}명`:""}</span></div><div><b>${best?best+"위":"–"}</b><span>최고 순위</span></div><div><b>${me?me.w+"-"+me.d+"-"+me.l:"0-0-0"}</b><span>승-무-패</span></div><div><b>${me&&me.g?(me.rate*100).toFixed(1)+"%":"–"}</b><span>승률${delta?` · 처음 대비 <span class="${delta>0?"pos":"neg"}">${delta>0?"▲"+delta:"▼"+(-delta)}</span>`:""}</span></div></div>`;
+  h+=recordCardHtml(pid,ms);
   h+=`<div><h3 class="small">순위 변화</h3><p class="sub">경기가 있었던 날마다 그날까지의 누적 기록으로 계산한 순위예요.</p></div>`;
   if(!rk.length)h+=`<div class="notice">아직 순위 기록이 없어요. ${S.minGames}경기 이상 치르면 그때부터 순위 변화가 그려져요.${me?` (현재 ${me.g}경기)`:""}</div>`;
   else h+=`<div class="chart">${chartSvg(pts)}</div><div class="legend"><span><i style="background:var(--court)"></i>경기한 날</span><span><i style="border:1.5px solid var(--fg);background:var(--surface)"></i>경기 없이 순위만 변동</span></div>`;
@@ -682,7 +708,7 @@ function renderLog(){
   if(!ms.length){body.innerHTML=`<div class="empty"><b>표시할 경기가 없어요</b>‘경기 입력’ 탭에서 결과를 기록해 보세요.</div>`;return}
   let h="",ld="";
   for(const m of ms.slice(0,300)){
-    if(m.date!==ld){ld=m.date;const d=new Date(m.date+"T00:00");h+=`<div class="date-h">${m.date.replace(/-/g,".")} (${"일월화수목금토"[d.getDay()]})</div>`}
+    if(m.date!==ld){ld=m.date;const d=new Date(m.date+"T00:00");h+=`<div class="date-h">${m.date.replace(/-/g,".")} (${"일월화수목금토"[d.getDay()]})<button class="link share-btn" type="button" data-share="${esc(m.date)}">결과 공유 이미지</button></div>`}
     const aw=m.scoreA>m.scoreB,dr=m.scoreA===m.scoreB;let del="";
     if(canDelete(m))del=S.pendingDel===m.id?`<span class="confirm">삭제할까요? <button class="link" data-yes="${esc(m.id)}">삭제</button><button class="link" style="color:var(--muted)" data-no>취소</button></span>`:`<button class="link" data-del="${esc(m.id)}">삭제</button>`;
     h+=`<div class="match"><div class="team ${aw||dr?"":"l"}">${esc(nameOf(m.teamA[0]))}<br>${esc(nameOf(m.teamA[1]))}</div><div class="score">${m.scoreA} : ${m.scoreB}</div><div class="team b ${aw&&!dr?"l":""}">${esc(nameOf(m.teamB[0]))}<br>${esc(nameOf(m.teamB[1]))}</div><div class="meta"><span>${dr?"무승부":aw?"A팀 승":"B팀 승"}${m.test?' <span class="tag">테스트</span>':""}</span>${del}</div></div>`;
@@ -692,6 +718,7 @@ function renderLog(){
 $("#logFilter").onchange=e=>{S.logFilter=e.target.value;renderLog()};
 $("#logBody").onclick=async e=>{
   const t=e.target;
+  if(t.dataset.share){t.disabled=true;try{await shareImage(t.dataset.share)}catch(err){msg("#logMsg","이미지를 만들지 못했어요. "+errText(err),true)}t.disabled=false;return}
   if(t.dataset.del){S.pendingDel=t.dataset.del;renderLog();return}
   if(t.hasAttribute("data-no")){S.pendingDel=null;renderLog();return}
   if(t.dataset.yes){t.disabled=true;try{await S.api.deleteMatches([t.dataset.yes]);msg("#logMsg","삭제했어요.",false)}catch(err){msg("#logMsg","삭제하지 못했어요. "+errText(err),true)}S.pendingDel=null;renderLog()}
@@ -1043,6 +1070,161 @@ $("#tEditor").onclick=async e=>{
     }catch(err){b.disabled=false;msg("#teMsg","저장하지 못했어요. "+errText(err),true)}
   }
 };
+/* ===== 추가 기능: 개인 기록 카드 · 월간 MVP · 결과 공유 이미지 · 홈 화면 앱 ===== */
+const rateOf=x=>(x.w+x.l)?x.w/(x.w+x.l):0;
+const resOf=(m,pid)=>{const inA=m.teamA.includes(pid),a=inA?m.scoreA:m.scoreB,b=inA?m.scoreB:m.scoreA;return a>b?"W":a<b?"L":"D"};
+const wdl=x=>`${x.w}승${x.d?` ${x.d}무`:""} ${x.l}패`;
+function pStats(pid,ms){
+  const L=ms.filter(m=>m.teamA.includes(pid)||m.teamB.includes(pid)).sort(byTime);
+  const part={},opp={};let run=0,best=0;
+  const bump=(M,id,r)=>{const o=M[id]||(M[id]={id,g:0,w:0,d:0,l:0});o.g++;o[r==="W"?"w":r==="L"?"l":"d"]++};
+  L.forEach(m=>{const inA=m.teamA.includes(pid),my=inA?m.teamA:m.teamB,op=inA?m.teamB:m.teamA,r=resOf(m,pid);
+    bump(part,my.find(x=>x!==pid),r);op.forEach(o=>bump(opp,o,r));
+    if(r==="W"){run++;best=Math.max(best,run)}else run=0});
+  let sk=0,skT=null;for(let i=L.length-1;i>=0;i--){const r=resOf(L[i],pid);if(r==="D")break;if(!skT)skT=r;if(r!==skT)break;sk++}
+  return {L,part:Object.values(part),opp:Object.values(opp),best,sk,skT};
+}
+function recordCardHtml(pid,ms){
+  const P=pStats(pid,ms);if(!P.L.length)return "";
+  const pick=(arr,min,sort)=>{const c=arr.filter(x=>x.g>=min);return (c.length?c:[]).sort(sort)[0]||null};
+  const bestP=pick(P.part,2,(a,b)=>rateOf(b)-rateOf(a)||b.w-a.w||b.g-a.g)||pick(P.part,1,(a,b)=>rateOf(b)-rateOf(a)||b.g-a.g);
+  const freqP=[...P.part].sort((a,b)=>b.g-a.g||rateOf(b)-rateOf(a))[0];
+  const nem=P.opp.filter(o=>o.l>=1).sort((a,b)=>b.l-a.l||rateOf(a)-rateOf(b)||b.g-a.g)[0]||null;
+  const prey=P.opp.filter(o=>o.w>=1).sort((a,b)=>b.w-a.w||rateOf(b)-rateOf(a)||b.g-a.g)[0]||null;
+  const tile=(lbl,name,sub)=>`<div class="rc"><span>${lbl}</span><b>${name}</b><small>${sub}</small></div>`;
+  let h=`<div><h3 class="small">나의 기록 카드</h3><p class="sub">${esc(periodLabel())} 기록 기준이에요.</p></div><div class="rcards">`;
+  h+=tile("베스트 파트너",bestP?esc(nameOf(bestP.id)):"–",bestP?`함께 ${bestP.g}경기 · ${wdl(bestP)}`:"기록이 더 필요해요");
+  h+=tile("자주 함께한 파트너",freqP?esc(nameOf(freqP.id)):"–",freqP?`함께 ${freqP.g}경기 · 승률 ${(rateOf(freqP)*100).toFixed(0)}%`:"");
+  h+=tile("천적",nem?esc(nameOf(nem.id)):"아직 없음",nem?`상대 전적 ${wdl(nem)}`:"진 상대가 없어요");
+  h+=tile("자주 이긴 상대",prey?esc(nameOf(prey.id)):"–",prey?`상대 전적 ${wdl(prey)}`:"");
+  h+=tile("최장 연승",P.best?`${P.best}연승`:"–",P.sk>=2?`지금 ${P.sk}${P.skT==="W"?"연승":"연패"} 중`:(P.sk===1?`최근 경기 ${P.skT==="W"?"승":"패"}`:"최근 경기 무승부"));
+  h+=`</div>`;
+  const opps=[...P.opp].sort((a,b)=>b.g-a.g||rateOf(b)-rateOf(a));
+  h+=`<details class="h2h"><summary>상대 전적 전체 보기 (${opps.length}명)</summary><div class="h2h-l">${opps.map(o=>`<div><span>${esc(nameOf(o.id))}</span><span class="mono">${o.w}-${o.d}-${o.l}</span><span class="${rateOf(o)>=.5?"pos":"neg"}">${o.w+o.l?(rateOf(o)*100).toFixed(0)+"%":"–"}</span></div>`).join("")}</div><p class="sub" style="margin-top:6px">승-무-패 · 그 선수가 상대 팀에 있었던 경기만 셌어요.</p></details>`;
+  return h;
+}
+
+/* 월간 MVP */
+function monthAwards(ym){
+  const ms=S.matches.filter(m=>m.date.slice(0,7)===ym);if(!ms.length)return null;
+  const st=compute(ms);const ids=st.map(p=>p.id);
+  const streak={};ids.forEach(id=>streak[id]=pStats(id,ms).best);
+  const top=(arr,val)=>{if(!arr.length)return null;const v=val(arr[0]);const w=arr.filter(p=>val(p)===v);return {ids:w.map(p=>p.id),v}};
+  const games=top([...st].sort((a,b)=>b.g-a.g),p=>p.g);
+  const rq=st.filter(p=>p.g>=4).sort((a,b)=>b.rate-a.rate||b.w-a.w||b.diff-a.diff);
+  const rate=top(rq,p=>p.rate.toFixed(4)+"/"+p.w+"/"+p.diff);
+  const sq=st.filter(p=>streak[p.id]>=2).sort((a,b)=>streak[b.id]-streak[a.id]);
+  const strk=top(sq,p=>streak[p.id]);
+  const dq=st.filter(p=>p.g>=3&&p.diff>0).sort((a,b)=>b.diff-a.diff);
+  const diff=top(dq,p=>p.diff);
+  const one=id=>st.find(p=>p.id===id);
+  return {ym,n:ms.length,list:[
+    {k:"출전왕",d:games,sub:games&&`${games.v}경기 출전`},
+    {k:"승률왕",d:rate,sub:rate&&(()=>{const p=one(rate.ids[0]);return `${(p.rate*100).toFixed(0)}% · ${wdl(p)}`})(),need:"4경기 이상"},
+    {k:"연승왕",d:strk,sub:strk&&`${strk.v}연승`,need:"2연승 이상"},
+    {k:"득실왕",d:diff,sub:diff&&`게임 득실 +${diff.v}`,need:"3경기 이상"}]};
+}
+function awardMonths(){return [...new Set(S.matches.filter(m=>m.date.slice(0,4)===S.year&&m.date<=today()).map(m=>m.date.slice(0,7)))].sort().reverse()}
+function currentBadges(){const ms=awardMonths();const B={};if(!ms.length)return B;const A=monthAwards(ms[0]);if(!A)return B;
+  A.list.forEach(c=>{if(c.d)c.d.ids.forEach(id=>(B[id]=B[id]||[]).push(c.k))});return B}
+function badgeHtml(id){const b=(S.badges||{})[id];return b?b.map(k=>`<span class="bdg">${k}</span>`).join(""):""}
+function renderMVP(){
+  const box=$("#mvpBox");if(!box)return;
+  S.badges=currentBadges();
+  const months=awardMonths();
+  if(!S.ready||!months.length){box.hidden=true;return}
+  box.hidden=false;
+  if(!months.includes(S.mvpMonth))S.mvpMonth=months[0];
+  const A=monthAwards(S.mvpMonth);
+  const nm=d=>d?d.ids.slice(0,2).map(id=>`<button class="pbtn" data-pid="${esc(id)}">${esc(nameOf(id))}</button>`).join(" · ")+(d.ids.length>2?` 외 ${d.ids.length-2}명`:""):"";
+  box.innerHTML=`<div class="row spread"><div><h2>${+S.mvpMonth.slice(5)}월의 MVP</h2><p class="sub">${A.n}경기 기준 · 이번 달 수상자는 순위표 이름 옆에 배지가 붙어요</p></div><select id="mvpSel" style="width:auto" aria-label="월 선택">${months.map(m=>`<option value="${m}" ${m===S.mvpMonth?"selected":""}>${m.slice(0,4)}년 ${+m.slice(5)}월</option>`).join("")}</select></div>
+  <div class="mvp">${A.list.map(c=>`<div class="mv"><span class="bdg">${c.k}</span><b>${c.d?nm(c.d):"해당자 없음"}</b><small>${c.d?c.sub:c.need||""}</small></div>`).join("")}</div>`;
+  $("#mvpSel").onchange=e=>{S.mvpMonth=e.target.value;renderMVP()};
+  box.onclick=e=>{const b=e.target.closest(".pbtn");if(b)openPlayer(b.dataset.pid,b)};
+}
+
+/* 경기 결과 공유 이미지 (카톡 등) */
+async function shareImage(date){
+  try{await Promise.all(['700 40px "IBM Plex Sans KR"','500 30px "IBM Plex Sans KR"','60px "Black Han Sans"','600 30px "IBM Plex Mono"'].map(f=>document.fonts.load(f)))}catch(e){}
+  const day=S.matches.filter(m=>m.date===date).sort(byTime);
+  const yr=date.slice(0,4);
+  const before=ranked(S.matches.filter(m=>m.date.slice(0,4)===yr&&m.date<date));
+  const after=ranked(S.matches.filter(m=>m.date.slice(0,4)===yr&&m.date<=date));
+  const prevRk={};before.q.forEach(p=>prevRk[p.id]=p.rk);
+  const dst=compute(day).filter(p=>p.w>0).sort((a,b)=>b.w-a.w||b.diff-a.diff||a.l-b.l).slice(0,3);
+  const top=after.q.slice(0,10);
+  const W=1080,P=56,rowH=78;
+  const H=230+60+day.length*rowH+(dst.length?60+dst.length*58+20:0)+(top.length?80+top.length*58:0)+110;
+  const c=document.createElement("canvas");c.width=W;c.height=H;const x=c.getContext("2d");
+  const F=(w,s,f)=>`${w} ${s}px ${f==="d"?'"Black Han Sans"':f==="m"?'"IBM Plex Mono"':'"IBM Plex Sans KR"'},sans-serif`;
+  const fit=(t,max)=>{if(x.measureText(t).width<=max)return t;while(t.length>1&&x.measureText(t+"…").width>max)t=t.slice(0,-1);return t+"…"};
+  x.fillStyle="#f3f5f1";x.fillRect(0,0,W,H);
+  x.fillStyle="#1d5a47";x.fillRect(0,0,W,200);
+  x.strokeStyle="rgba(255,255,255,.18)";x.lineWidth=3;x.beginPath();x.moveTo(W/2,0);x.lineTo(W/2,200);x.moveTo(0,160);x.lineTo(W,160);x.stroke();
+  x.fillStyle="#fff";x.font=F("",64,"d");x.textBaseline="alphabetic";x.fillText("SST TENNIS",P,96);
+  const d=new Date(date+"T00:00");
+  x.font=F(500,30);x.fillStyle="rgba(255,255,255,.9)";x.fillText(`${date.replace(/-/g,".")} (${"일월화수목금토"[d.getDay()]}) 경기 결과 · ${day.length}경기`,P,140);
+  let y=260;
+  const head=t=>{x.fillStyle="#16231d";x.font=F(700,34);x.fillText(t,P,y);y+=24};
+  head("경기 결과");
+  day.forEach((m,i)=>{
+    const top_=y+8;x.fillStyle=i%2?"#f3f5f1":"#ffffff";x.fillRect(P-16,top_,W-2*P+32,rowH-8);
+    const aw=m.scoreA>m.scoreB,bw=m.scoreB>m.scoreA,cy=top_+(rowH-8)/2+11;
+    x.font=F(aw?700:500,30);x.fillStyle=bw?"#8a958f":"#16231d";x.textAlign="right";x.fillText(fit(`${nameOf(m.teamA[0])} · ${nameOf(m.teamA[1])}`,360),W/2-100,cy);
+    x.textAlign="left";x.font=F(bw?700:500,30);x.fillStyle=aw?"#8a958f":"#16231d";x.fillText(fit(`${nameOf(m.teamB[0])} · ${nameOf(m.teamB[1])}`,360),W/2+100,cy);
+    x.fillStyle="#1d5a47";const pw=150,ph=48;x.beginPath();x.roundRect(W/2-pw/2,cy-34,pw,ph,24);x.fill();
+    x.fillStyle="#fff";x.font=F(600,30,"m");x.textAlign="center";x.fillText(`${m.scoreA} : ${m.scoreB}`,W/2,cy);x.textAlign="left";
+    y+=rowH});
+  if(dst.length){y+=50;head("오늘의 활약");
+    dst.forEach((p,i)=>{y+=14;x.fillStyle=i===0?"#d4e157":"#e4eae1";x.beginPath();x.arc(P+20,y+18,20,0,7);x.fill();
+      x.fillStyle="#16231d";x.font=F("",24,"d");x.textAlign="center";x.fillText(String(i+1),P+20,y+27);x.textAlign="left";
+      x.font=F(700,30);x.fillText(nameOf(p.id),P+60,y+29);x.font=F(500,28);x.fillStyle="#5f6d66";
+      x.fillText(`${wdl(p)} · 득실 ${p.diff>0?"+":""}${p.diff}`,P+260,y+29);y+=44});y+=10}
+  if(top.length){y+=60;head(`${yr}년 누적 순위 TOP ${top.length}`);
+    top.forEach(p=>{y+=14;const was=prevRk[p.id];const dd=was?was-p.rk:null;
+      x.fillStyle="#16231d";x.font=F(600,28,"m");x.fillText(String(p.rk).padStart(2," ")+"위",P,y+29);
+      x.font=F(700,30);x.fillText(nameOf(p.id),P+120,y+29);
+      x.font=F(500,26);x.fillStyle="#5f6d66";x.fillText(`승률 ${(p.rate*100).toFixed(1)}% · ${p.w}승 ${p.l}패`,P+330,y+29);
+      x.textAlign="right";x.font=F(700,28);
+      if(dd===null){x.fillStyle="#1d5a47";x.fillText("NEW",W-P,y+29)}else if(dd>0){x.fillStyle="#1f7a4d";x.fillText("▲"+dd,W-P,y+29)}else if(dd<0){x.fillStyle="#b4462f";x.fillText("▼"+(-dd),W-P,y+29)}else{x.fillStyle="#8a958f";x.fillText("-",W-P,y+29)}
+      x.textAlign="left";y+=44})}
+  x.fillStyle="#1d5a47";x.fillRect(0,H-70,W,70);x.fillStyle="#fff";x.font=F(500,24);x.textAlign="center";
+  x.fillText(HOSTED?location.host+location.pathname.replace(/index\.html$/,""):"SST 테니스 클럽 랭킹",W/2,H-27);x.textAlign="left";
+  const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+  const file=new File([blob],`SST_${date}.png`,{type:"image/png"});
+  const url=URL.createObjectURL(blob);
+  const canShare=!!(navigator.canShare&&navigator.canShare({files:[file]}));
+  lastFocus=document.activeElement;
+  $("#sheet").innerHTML=`<div class="sheet-h"><div><h2>${date.replace(/-/g,".")} 결과 공유</h2><p class="sub" style="margin:6px 0 0">${canShare?"공유하기를 누르고 카카오톡을 고르면 단톡방에 바로 올릴 수 있어요.":"이미지를 저장한 뒤 카카오톡에서 사진으로 보내 주세요. 휴대폰에서는 이미지를 길게 눌러도 저장돼요."}</p></div><button class="xbtn" id="sheetClose" aria-label="닫기">✕</button></div>
+   <div class="row" style="gap:8px">${canShare?`<button class="btn" id="shareGo" type="button">공유하기</button>`:""}<a class="btn ${canShare?"ghost":""}" href="${url}" download="SST_${date}.png" style="text-decoration:none">이미지 저장</a></div>
+   <img src="${url}" alt="${date} 경기 결과 이미지" style="width:100%;border-radius:10px;border:1px solid var(--line)">`;
+  $("#sheetBg").hidden=false;document.body.style.overflow="hidden";
+  const sg=$("#shareGo");if(sg)sg.onclick=async()=>{try{await navigator.share({files:[file],title:"SST 테니스 경기 결과",text:`${date} SST 테니스 경기 결과`})}catch(e){}};
+  $("#sheetClose").focus();
+}
+
+/* 홈 화면 앱 (GitHub 주소에서만) */
+const HOSTED=/github\.io$/.test(location.hostname);
+const STANDALONE=matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+let installEvt=null;
+if(HOSTED){
+  [["link",{rel:"manifest",href:"manifest.json"}],["link",{rel:"apple-touch-icon",href:"icon-192.png"}],["meta",{name:"theme-color",content:"#1d5a47"}],["meta",{name:"apple-mobile-web-app-capable",content:"yes"}],["meta",{name:"apple-mobile-web-app-title",content:"SST 테니스"}]]
+    .forEach(([t,a])=>{const e=document.createElement(t);Object.entries(a).forEach(([k,v])=>e.setAttribute(k,v));document.head.appendChild(e)});
+  if("serviceWorker" in navigator)navigator.serviceWorker.register("sw.js").catch(()=>{});
+  addEventListener("beforeinstallprompt",e=>{e.preventDefault();installEvt=e});
+  if(!STANDALONE)$("#instBtn").hidden=false;
+}
+$("#instBtn").onclick=async()=>{
+  if(installEvt){installEvt.prompt();const r=await installEvt.userChoice.catch(()=>null);installEvt=null;if(r&&r.outcome==="accepted")$("#instBtn").hidden=true;return}
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  lastFocus=$("#instBtn");
+  $("#sheet").innerHTML=`<div class="sheet-h"><div><h2>홈 화면에 SST 추가하기</h2><p class="sub" style="margin:6px 0 0">추가하면 앱처럼 아이콘을 눌러 바로 열려요.</p></div><button class="xbtn" id="sheetClose" aria-label="닫기">✕</button></div>
+  <div class="inst"><div class="${ios?"on":""}"><b>아이폰 (사파리)</b><ol><li>사파리로 이 주소를 열어요</li><li>아래쪽 <b>공유 버튼</b>(네모에 위 화살표)을 눌러요</li><li><b>홈 화면에 추가</b> → <b>추가</b>를 눌러요</li></ol></div>
+  <div class="${ios?"":"on"}"><b>안드로이드 (크롬·삼성 인터넷)</b><ol><li>오른쪽 위 <b>⋮</b> 메뉴(삼성 인터넷은 아래 <b>≡</b>)를 눌러요</li><li><b>홈 화면에 추가</b> 또는 <b>앱 설치</b>를 눌러요</li></ol></div>
+  <p class="sub">카카오톡 안에서 링크를 열었다면, 오른쪽 위 메뉴에서 <b>다른 브라우저로 열기</b>를 먼저 눌러 주세요.</p></div>`;
+  $("#sheetBg").hidden=false;document.body.style.overflow="hidden";$("#sheetClose").focus();
+};
+
 function renderAll(){renderRank();renderLog();renderPickers();renderMembers();renderPair();if(!S.tEdit&&!S.tEntry)renderTour()}
 function setStatus(kind,text){const l=$("#live");l.classList.toggle("off",kind!=="ok");$("#liveTxt").textContent=text}
 renderAll();
