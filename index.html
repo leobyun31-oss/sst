@@ -106,6 +106,7 @@ textarea{min-height:110px;resize:vertical}
 .mem:last-child{border-bottom:0}
 .tag{font-size:11px;color:var(--muted);border:1px solid var(--line);padding:1px 6px;border-radius:999px;margin-left:6px}
 .confirm{display:flex;gap:8px;align-items:center;font-size:12px}
+td.pts{font-weight:700;color:var(--fg)}
 a.mname{color:inherit;text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:4px;padding:4px 0}
 a.mname svg{color:var(--court);opacity:.75}
 a.mname:hover{color:var(--court)}
@@ -332,7 +333,7 @@ a.bn:focus-visible,a.sh:focus-visible,a.ev:focus-visible{outline:3px solid var(-
 </head>
 <body>
 <header class="hero"><div class="hero-in">
-  <div class="club">SST TENNIS<small>복식 랭킹 · 승률 기준</small></div>
+  <div class="club">SST TENNIS<small>복식 랭킹 · 승점 기준</small></div>
   <span class="hero-r"><button class="instbtn" id="instBtn" type="button" hidden>앱 설치</button><span class="live off" id="live"><i></i><span id="liveTxt">연결 중</span></span></span>
 </div></header>
 
@@ -541,9 +542,12 @@ function compute(ms){
     m.teamA.forEach(id=>add(get(id),ra,m.scoreA,m.scoreB));
     m.teamB.forEach(id=>add(get(id),rb,m.scoreB,m.scoreA));
   });
-  return Object.values(P).map(p=>({...p,rate:(p.w+p.l)?p.w/(p.w+p.l):0,diff:p.gf-p.ga,form:p.form.slice(-5)}));
+  return Object.values(P).map(p=>({...p,pts:PTS(p),rate:(p.w+p.l)?p.w/(p.w+p.l):0,diff:p.gf-p.ga,form:p.form.slice(-5)}));
 }
-const cmp=(a,b)=>b.rate-a.rate||b.w-a.w||b.diff-a.diff||nameOf(a.id).localeCompare(nameOf(b.id),"ko");
+/* 승점제: 승 3 · 무 1 · 패 0 → 동점 시 게임 득실 → 득점 */
+const PTS=p=>p.w*3+p.d;
+const cmpPts=(a,b)=>b.pts-a.pts||b.diff-a.diff||b.gf-a.gf;
+const cmp=(a,b)=>cmpPts(a,b)||nameOf(a.id).localeCompare(nameOf(b.id),"ko");
 /* 등급: 1~10위 A조 프라임 · 11~20위 B조 초이스 · 21위~ C조 셀렉트 */
 const TIERS={A:{k:"A",group:"A조",grade:"프라임",range:"1~10위"},B:{k:"B",group:"B조",grade:"초이스",range:"11~20위"},C:{k:"C",group:"C조",grade:"셀렉트",range:"21위 이하"}};
 const tierOf=rk=>rk<=10?TIERS.A:rk<=20?TIERS.B:TIERS.C;
@@ -560,7 +564,7 @@ function rowHtml(p,unr){
   const d=p.diff>0?`<span class="pos">+${p.diff}</span>`:p.diff<0?`<span class="neg">${p.diff}</span>`:"0";
   const form=p.form.map(f=>`<i class="${f}">${f==="W"?"승":f==="L"?"패":"무"}</i>`).join("");
   const rc=unr?`<span class="rank">–</span>`:`<span class="rank ${p.rk<=3?"r"+p.rk:""}">${p.rk}</span>`;
-  return `<tr class="${unr?"unranked":""}"><td class="rk">${rc}</td><td class="name"><button class="pbtn" data-pid="${esc(p.id)}">${esc(nameOf(p.id))}</button>${badgeHtml(p.id)}</td><td>${p.g}</td><td>${p.w}</td><td>${p.d}</td><td>${p.l}</td><td><div class="rate"><div class="b"><i style="width:${pct}%"></i></div>${pct}%</div></td><td>${d}</td><td style="text-align:left;padding-left:10px"><span class="form">${form}</span></td></tr>`;
+  return `<tr class="${unr?"unranked":""}"><td class="rk">${rc}</td><td class="name"><button class="pbtn" data-pid="${esc(p.id)}">${esc(nameOf(p.id))}</button>${badgeHtml(p.id)}</td><td>${p.g}</td><td>${p.w}</td><td>${p.d}</td><td>${p.l}</td><td class="pts">${p.pts}</td><td><div class="rate"><div class="b"><i style="width:${pct}%"></i></div>${pct}%</div></td><td>${d}</td><td style="text-align:left;padding-left:10px"><span class="form">${form}</span></td></tr>`;
 }
 /* 순위 보기: 개인별 / 팀별(같이 뛴 2인 조합) + 이름 검색 */
 const TEAM_MIN=3;
@@ -572,8 +576,8 @@ function computeTeams(ms){
       const k=key(tm),t=T[k]||(T[k]={id:k,ids:[...tm].sort((a,b)=>nameOf(a).localeCompare(nameOf(b),"ko")),g:0,w:0,d:0,l:0,gf:0,ga:0,form:[]});
       t.g++;r==="W"?t.w++:r==="L"?t.l++:t.d++;t.gf+=gf;t.ga+=ga;t.form.push(r)});
   });
-  const cmpT=(a,b)=>b.rate-a.rate||b.w-a.w||b.diff-a.diff||b.g-a.g;
-  const all=Object.values(T).map(t=>({...t,rate:(t.w+t.l)?t.w/(t.w+t.l):0,diff:t.gf-t.ga,form:t.form.slice(-5)}));
+  const cmpT=(a,b)=>cmpPts(a,b);
+  const all=Object.values(T).map(t=>({...t,pts:PTS(t),rate:(t.w+t.l)?t.w/(t.w+t.l):0,diff:t.gf-t.ga,form:t.form.slice(-5)}));
   const q=all.filter(t=>t.g>=TEAM_MIN).sort(cmpT),u=all.filter(t=>t.g<TEAM_MIN).sort(cmpT);
   let rk=0,prev=null;q.forEach((t,i)=>{if(!prev||cmpT(prev,t)!==0)rk=i+1;prev=t;t.rk=rk});
   return {q,u,all};
@@ -583,20 +587,20 @@ function statCells(p){
   const pct=(p.rate*100).toFixed(1);
   const d=p.diff>0?`<span class="pos">+${p.diff}</span>`:p.diff<0?`<span class="neg">${p.diff}</span>`:"0";
   const form=p.form.map(f=>`<i class="${f}">${f==="W"?"승":f==="L"?"패":"무"}</i>`).join("");
-  return `<td>${p.g}</td><td>${p.w}</td><td>${p.d}</td><td>${p.l}</td><td><div class="rate"><div class="b"><i style="width:${pct}%"></i></div>${pct}%</div></td><td>${d}</td><td style="text-align:left;padding-left:10px"><span class="form">${form}</span></td>`;
+  return `<td>${p.g}</td><td>${p.w}</td><td>${p.d}</td><td>${p.l}</td><td class="pts">${p.pts}</td><td><div class="rate"><div class="b"><i style="width:${pct}%"></i></div>${pct}%</div></td><td>${d}</td><td style="text-align:left;padding-left:10px"><span class="form">${form}</span></td>`;
 }
 function teamRow(t,unr){
   const rc=unr?`<span class="rank">–</span>`:`<span class="rank ${t.rk<=3?"r"+t.rk:""}">${t.rk}</span>`;
   return `<tr class="${unr?"unranked":""}"><td class="rk">${rc}</td><td class="name team2">${t.ids.map(id=>`<button class="pbtn" data-pid="${esc(id)}">${esc(nameOf(id))}</button>`).join("<br>")}</td>${statCells(t)}</tr>`;
 }
-const RANK_HEAD=`<thead><tr><th>순위</th><th>이름</th><th>경기</th><th>승</th><th>무</th><th>패</th><th>승률</th><th>득실</th><th style="text-align:left;padding-left:10px">최근 5경기</th></tr></thead>`;
+const RANK_HEAD=`<thead><tr><th>순위</th><th>이름</th><th>경기</th><th>승</th><th>무</th><th>패</th><th>승점</th><th>승률</th><th>득실</th><th style="text-align:left;padding-left:10px">최근 5경기</th></tr></thead>`;
 function renderRank(){
   renderYears();renderMVP();
   const ms=S.matches.filter(m=>inPeriod(m.date));const R=ranked(ms);const team=S.rankMode==="t";
   $("#sMatches").textContent=ms.length;$("#sPlayers").textContent=R.all.length;
   const last=ms.reduce((a,m)=>m.date>a?m.date:a,"");$("#sLast").textContent=last?last.slice(5).replace("-","/"):"-";
   $("#rankTitle").textContent=team?"팀별 순위":"개인별 순위";
-  $("#rankSub").textContent=team?`${periodLabel()} · 함께 뛴 2인 조합 기준 · 승률(무승부 제외) 순 · 최소 ${TEAM_MIN}경기 이상 순위 산정`:`${periodLabel()} · 승률(무승부 제외) 순 · 동률 시 승수 → 게임 득실 · 최소 ${S.minGames}경기 이상 순위 산정`;
+  $("#rankSub").textContent=team?`${periodLabel()} · 함께 뛴 2인 조합 기준 · 승점(승 3·무 1·패 0) 순 · 최소 ${TEAM_MIN}경기 이상 순위 산정`:`${periodLabel()} · 승점(승 3·무 1·패 0) 순 · 동점 시 게임 득실 → 득점 · 최소 ${S.minGames}경기 이상 순위 산정`;
   $("#rankHint").textContent=team?"이름을 누르면 그 선수의 순위 변화를 볼 수 있어요. 같은 2명이 한 팀으로 뛴 경기만 모아서 계산해요.":"이름을 누르면 그 선수의 순위 변화를 볼 수 있어요.";
   const cnt={A:0,B:0,C:0};R.q.forEach(p=>cnt[p.tier.k]++);
   $("#tierSum").innerHTML=!team&&S.ready&&R.q.length?["A","B","C"].map(k=>`${tchip(TIERS[k])}<span class="sub" style="margin:0 6px 0 -2px;align-self:center">${cnt[k]}명</span>`).join(""):"";
@@ -608,13 +612,13 @@ function renderRank(){
     const T=computeTeams(ms);
     const q=T.q.filter(t=>nameHit(t.ids)),u=T.u.filter(t=>nameHit(t.ids));n=q.length+u.length;
     q.forEach(t=>h+=teamRow(t,false));
-    if(u.length){h+=`<tr class="divider"><td colspan="9">${TEAM_MIN}경기 미만 팀 ${u.length}개 · 순위 미산정 <button class="link go" type="button" id="teamUToggle">${S.showTeamU?"접기":"펼쳐 보기"}</button></td></tr>`;if(S.showTeamU)u.forEach(t=>h+=teamRow(t,true))}
+    if(u.length){h+=`<tr class="divider"><td colspan="10">${TEAM_MIN}경기 미만 팀 ${u.length}개 · 순위 미산정 <button class="link go" type="button" id="teamUToggle">${S.showTeamU?"접기":"펼쳐 보기"}</button></td></tr>`;if(S.showTeamU)u.forEach(t=>h+=teamRow(t,true))}
     $("#rankCount").textContent=`${T.all.length}팀`;
   }else{
     let cur=null;
-    R.q.filter(p=>nameHit([p.id])).forEach(p=>{n++;if(p.tier!==cur){cur=p.tier;h+=`<tr class="tier-h ${cur.k}"><td colspan="9">${tchip(cur,true)}</td></tr>`}h+=rowHtml(p,false)});
+    R.q.filter(p=>nameHit([p.id])).forEach(p=>{n++;if(p.tier!==cur){cur=p.tier;h+=`<tr class="tier-h ${cur.k}"><td colspan="10">${tchip(cur,true)}</td></tr>`}h+=rowHtml(p,false)});
     const u=R.u.filter(p=>nameHit([p.id]));n+=u.length;
-    if(u.length){h+=`<tr class="divider"><td colspan="9">${S.minGames}경기 미만 · 순위·등급 미산정</td></tr>`;u.forEach(p=>h+=rowHtml(p,true))}
+    if(u.length){h+=`<tr class="divider"><td colspan="10">${S.minGames}경기 미만 · 순위·등급 미산정</td></tr>`;u.forEach(p=>h+=rowHtml(p,true))}
     $("#rankCount").textContent=`${R.all.length}명`;
   }
   if(!n){body.innerHTML=`<div class="empty"><b>'${esc(S.q)}' 이름이 들어간 ${team?"팀":"선수"}이 없어요</b>검색어를 지우면 전체 순위가 보여요.</div>`;return}
@@ -678,7 +682,7 @@ function openPlayer(pid,from){
   const periodTxt=periodLabel();
   const mine=[...ms].filter(m=>m.teamA.includes(pid)||m.teamB.includes(pid)).sort(byTime).reverse();
   let h=`<div class="sheet-h"><div><h2 id="pName">${pname}</h2><div class="row" style="gap:8px;margin-top:8px">${now?tchip(me.tier):`<span class="tchip N">순위 미산정</span>`}<span class="sub" style="margin:0">${periodTxt} 기준</span></div></div><button class="xbtn" id="sheetClose" aria-label="닫기">✕</button></div>`;
-  h+=`<div class="pstats"><div><b>${now?now+"위":"–"}</b><span>현재 순위${now?` / ${R.q.length}명`:""}</span></div><div><b>${best?best+"위":"–"}</b><span>최고 순위</span></div><div><b>${me?me.w+"-"+me.d+"-"+me.l:"0-0-0"}</b><span>승-무-패</span></div><div><b>${me&&me.g?(me.rate*100).toFixed(1)+"%":"–"}</b><span>승률${delta?` · 처음 대비 <span class="${delta>0?"pos":"neg"}">${delta>0?"▲"+delta:"▼"+(-delta)}</span>`:""}</span></div></div>`;
+  h+=`<div class="pstats"><div><b>${now?now+"위":"–"}</b><span>현재 순위${now?` / ${R.q.length}명`:""}</span></div><div><b>${best?best+"위":"–"}</b><span>최고 순위</span></div><div><b>${me?me.w+"-"+me.d+"-"+me.l:"0-0-0"}</b><span>승-무-패</span></div><div><b>${me?me.pts+"점":"–"}</b><span>승점 · 승률 ${me&&me.g?(me.rate*100).toFixed(1)+"%":"–"}${delta?` · 처음 대비 <span class="${delta>0?"pos":"neg"}">${delta>0?"▲"+delta:"▼"+(-delta)}</span>`:""}</span></div></div>`;
   h+=recordCardHtml(pid,ms);
   h+=`<div><h3 class="small">순위 변화</h3><p class="sub">경기가 있었던 날마다 그날까지의 누적 기록으로 계산한 순위예요.</p></div>`;
   if(!rk.length)h+=`<div class="notice">아직 순위 기록이 없어요. ${S.minGames}경기 이상 치르면 그때부터 순위 변화가 그려져요.${me?` (현재 ${me.g}경기)`:""}</div>`;
@@ -936,7 +940,7 @@ $("#pairList").onclick=e=>{
 /* ===== 분기대회 =====
    - 관리자: 대회 만들기 → 참석자 A/B/C조 배정 → 조별 대진 작성 → 게시
    - 게시 전(draft) 대회는 서버가 관리자에게만 보내 줌
-   - 게시 후 누구나 경기 결과 입력 → 조별 순위 실시간 반영 (승수 → 게임 득실 → 득점)
+   - 게시 후 누구나 경기 결과 입력 → 조별 순위 실시간 반영 (승점 → 게임 득실 → 득점)
    - 대회 결과는 평소 순위와 따로 관리 */
 const TG=["A","B","C"];
 const ST_LABEL={draft:"게시 전",published:"진행 중",closed:"종료"};
@@ -948,7 +952,8 @@ function tStandings(t,g){
     const add=(id,f,a)=>{const p=P[id]||(P[id]={id,g:0,w:0,d:0,l:0,gf:0,ga:0});p.g++;f>a?p.w++:f<a?p.l++:p.d++;p.gf+=f;p.ga+=a};
     m.teamA.forEach(id=>add(id,m.scoreA,m.scoreB));m.teamB.forEach(id=>add(id,m.scoreB,m.scoreA));
   });
-  const cmpS=(a,b)=>b.w-a.w||(b.gf-b.ga)-(a.gf-a.ga)||b.gf-a.gf;
+  Object.values(P).forEach(p=>{p.pts=PTS(p);p.diff=p.gf-p.ga});
+  const cmpS=cmpPts;
   const list=Object.values(P).sort((a,b)=>cmpS(a,b)||nameOf(a.id).localeCompare(nameOf(b.id),"ko"));
   let rk=0,prev=null;list.forEach((p,i)=>{if(!prev||cmpS(prev,p)!==0)rk=i+1;prev=p;p.rk=rk;p.diff=p.gf-p.ga});
   return list;
@@ -981,8 +986,8 @@ function renderTour(){
   let h=`<div class="card"><div class="row spread"><div class="seg" id="tGrp">${gs.map(g=>`<button data-g="${g}" aria-pressed="${g===S.tgrp}">${g}조 ${(t.groups[g]||[]).length}명</button>`).join("")}</div>${t.status==="draft"?`<span class="notice" style="padding:6px 10px">게시 전이라 관리자에게만 보여요</span>`:""}</div>${leaders?`<div class="gwin"><span style="background:none;padding:6px 0">현재 조 1위</span>${leaders}</div>`:""}`;
   if(!gs.length){view.innerHTML=h+`<div class="empty"><b>아직 조 배정이 없어요</b>${isAdmin()?"'편집'에서 참석자를 조에 배정하세요.":""}</div></div>`;return}
   const g=S.tgrp,stn=tStandings(t,g),gm=all.filter(m=>m.grp===g).sort((a,b)=>a.no-b.no);
-  h+=`<h3 class="small" style="margin-top:16px">${g}조 순위 <span class="sub" style="font-weight:400">· 승수 → 게임 득실 → 득점 순</span></h3><div class="tbl-wrap" style="margin-top:6px"><table class="tstand" style="min-width:0"><thead><tr><th>순위</th><th>이름</th><th>경기</th><th>승</th><th>무</th><th>패</th><th>득실</th><th>득점</th></tr></thead><tbody>`+
-    stn.map(p=>`<tr><td class="rk"><span class="rank ${p.g&&p.rk<=3?"r"+p.rk:""}">${p.g?p.rk:"–"}</span></td><td class="name"><button class="pbtn" data-pid="${esc(p.id)}">${esc(nameOf(p.id))}</button></td><td>${p.g}</td><td>${p.w}</td><td>${p.d}</td><td>${p.l}</td><td>${p.diff>0?`<span class="pos">+${p.diff}</span>`:p.diff<0?`<span class="neg">${p.diff}</span>`:"0"}</td><td>${p.gf}</td></tr>`).join("")+`</tbody></table></div></div>`;
+  h+=`<h3 class="small" style="margin-top:16px">${g}조 순위 <span class="sub" style="font-weight:400">· 승점(승 3·무 1·패 0) → 게임 득실 → 득점 순</span></h3><div class="tbl-wrap" style="margin-top:6px"><table class="tstand" style="min-width:0"><thead><tr><th>순위</th><th>이름</th><th>경기</th><th>승</th><th>무</th><th>패</th><th>승점</th><th>득실</th><th>득점</th></tr></thead><tbody>`+
+    stn.map(p=>`<tr><td class="rk"><span class="rank ${p.g&&p.rk<=3?"r"+p.rk:""}">${p.g?p.rk:"–"}</span></td><td class="name"><button class="pbtn" data-pid="${esc(p.id)}">${esc(nameOf(p.id))}</button></td><td>${p.g}</td><td>${p.w}</td><td>${p.d}</td><td>${p.l}</td><td class="pts">${p.pts}</td><td>${p.diff>0?`<span class="pos">+${p.diff}</span>`:p.diff<0?`<span class="neg">${p.diff}</span>`:"0"}</td><td>${p.gf}</td></tr>`).join("")+`</tbody></table></div></div>`;
   h+=`<div class="card"><h3 class="small">${g}조 대진 · ${gm.filter(m=>m.scoreA!==null).length}/${gm.length}경기 완료</h3><p class="sub">${t.status==="published"?"경기가 끝나면 참가자 누구나 '결과 입력'으로 스코어를 넣어 주세요. 순위에 바로 반영돼요.":t.status==="closed"?"종료된 대회예요.":"게시 후 결과를 입력할 수 있어요."}</p><div style="margin-top:4px">`+
     (gm.length?gm.map(m=>{const has=m.scoreA!==null,aw=has&&m.scoreA>m.scoreB,bw=has&&m.scoreB>m.scoreA;
       let act="";if(canEnter(t,m))act=`<button class="link go" type="button" data-tent="${esc(m.id)}">${has?"수정":"결과 입력"}</button>`+(isAdmin()&&has?`<button class="link" type="button" data-tclr="${esc(m.id)}">지우기</button>`:"");
@@ -1184,7 +1189,7 @@ async function shareImage(date){
     top.forEach(p=>{y+=14;const was=prevRk[p.id];const dd=was?was-p.rk:null;
       x.fillStyle="#16231d";x.font=F(600,28,"m");x.fillText(String(p.rk).padStart(2," ")+"위",P,y+29);
       x.font=F(700,30);x.fillText(nameOf(p.id),P+120,y+29);
-      x.font=F(500,26);x.fillStyle="#5f6d66";x.fillText(`승률 ${(p.rate*100).toFixed(1)}% · ${p.w}승 ${p.l}패`,P+330,y+29);
+      x.font=F(500,26);x.fillStyle="#5f6d66";x.fillText(`승점 ${p.pts} · ${wdl(p)} · 득실 ${p.diff>0?"+":""}${p.diff}`,P+330,y+29);
       x.textAlign="right";x.font=F(700,28);
       if(dd===null){x.fillStyle="#1d5a47";x.fillText("NEW",W-P,y+29)}else if(dd>0){x.fillStyle="#1f7a4d";x.fillText("▲"+dd,W-P,y+29)}else if(dd<0){x.fillStyle="#b4462f";x.fillText("▼"+(-dd),W-P,y+29)}else{x.fillStyle="#8a958f";x.fillText("-",W-P,y+29)}
       x.textAlign="left";y+=44})}
